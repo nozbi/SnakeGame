@@ -30,6 +30,7 @@ function OnLoad()
     document.getElementById("GamePanel").appendChild(Target);
     OnResize();
     RespawnTarget();
+    Tail = document.getElementsByClassName("Tail");
 }
 
 function OnResize()
@@ -168,15 +169,15 @@ function MoveHead()
 
 function OnCrash()
 {
+    clearInterval(MovementTimer);
     Head.parentNode.removeChild(Head);
     var Size = Tail.length;
-    Target.innerHTML = Size;
-    var i;
-    for(i = 0; i<Size; i++)
+    for (var i = 0; i<Size; i++)
     {
-        Tail[i].parentNode.removeChild(Tail[i]);
+        Tail[0].parentNode.removeChild(Tail[0]);
     }
-}
+ }
+ 
 
 function CheckTarget()
 {
@@ -210,8 +211,18 @@ function AddTail()
 
 function MoveTail()
 {
-    Tail = document.getElementsByClassName("Tail");
-    if(Tail[0] != null)
+    if(Tail.length > 1)
+    {
+        var Size = Tail.length;
+        for (var i = Size-1; i > 0 ; i--)
+        {
+            Tail[i].style.top = Tail[i-1].style.top;
+             Tail[i].style.left = Tail[i-1].style.left;
+        }
+        Tail[0].style.top = Head.style.top;
+        Tail[0].style.left = Head.style.left;  
+    }
+    else if(Tail.length == 1)
     {
         Tail[0].style.top = Head.style.top;
         Tail[0].style.left = Head.style.left;
