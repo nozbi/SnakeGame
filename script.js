@@ -12,41 +12,62 @@ var Direction;
 var Target
 var TargetStep = 5;
 var Tail;
+var Score;
+var Highscore;
+var bCrashed;
+var StartGamePanel;
 
 
 
 function OnLoad()
 {
-    OnResize();
-    Direction="down";
-    MovementTimer = setInterval(Move, 200);
+    bCrashed = true;
+    Tail = document.getElementsByClassName("Tail");
     Head = document.createElement("div");
     Head.setAttribute("id","Head");
     document.getElementById("GamePanel").appendChild(Head);
-    Head.style.top = "0%";
-    Head.style.left = "50%";
     Target = document.createElement("div");
     Target.setAttribute("id","Target");
     document.getElementById("GamePanel").appendChild(Target);
+    HUDPanel = document.getElementById("HUDPanel");
     OnResize();
+}
+
+function OnGameStart()
+{
+    Direction="down";
+    MovementTimer = setInterval(Move, 200);
+    Head.style.top = "0%";
+    Head.style.left = "50%";
+    Score = 0;
+    document.getElementById("ScorePanel").innerHTML = "Score: " + Score;
+    bCrashed = false;
     RespawnTarget();
-    Tail = document.getElementsByClassName("Tail");
+    if(localStorage.getItem('Data') == null)
+    {
+        Highscore = 0;
+    }
+    else
+    {
+        Highscore = localStorage.getItem('Data');
+    }
+    document.getElementById("HighscorePanel").innerHTML = "Highscore: " + Highscore;
+    HUDPanel.style.visibility = "hidden";
+    var Size = Tail.length;
+    for(var i=0; i<Size; i++)
+    {
+        Tail[0].parentNode. removeChild(Tail[0]);
+    }
+    Head.style.backgroundColor = "Yellow";
 }
 
 function OnResize()
 {
+    var PixelGap = 0.05;
     var GamePanel = document.getElementById("GamePanel");
     var InGamePanel = document.getElementById("InGamePanel");
-    if(window.innerWidth > window.innerHeight)
-    {
-        GamePanel.style.width = 100 + "vh";
-        GamePanel.style.height = 100 + "vh";
-    }
-    else if(window.innerWidth < window.innerHeight)
-    {
-        GamePanel.style.width = 100 + "vw";
-        GamePanel.style.height = 100 + "vw";
-    }
+    GamePanel.style.width = 100 + "vmin";
+    GamePanel.style.height = 100 + PixelGap + "vmin";
     var SidePanelWidth = (window.innerWidth-GamePanel.offsetWidth)/2;
     if(SidePanelWidth < document.getElementById("ScorePanel").offsetWidth || SidePanelWidth < document.getElementById("HighscorePanel").offsetWidth)
     {
@@ -83,6 +104,10 @@ function PXToVW(Px)
 
 function OnKeyPressed(Event)
 {
+    if(bCrashed == true)
+    {
+        OnGameStart();
+    }
     if(Event.keyCode == 37)
     {
         KeyDirection="left";
@@ -91,7 +116,7 @@ function OnKeyPressed(Event)
     {
         KeyDirection="right";
     }
-    if(Event.keyCode == 38)
+    else if(Event.keyCode == 38)
     {
         KeyDirection="up";
     }
@@ -103,9 +128,17 @@ function OnKeyPressed(Event)
 
 function Move()
 {
-    MoveTail();
-    MoveHead();
-    CheckTarget();
+    if(((KeyDirection == "up" || KeyDirection == "down") && (Direction != "up" && Direction != "down")) || (KeyDirection == "left" || KeyDirection == "right") && (Direction != "left" && Direction != "right"))
+    {
+        Direction = KeyDirection;
+    }
+    CheckCollision();
+    if(bCrashed == false)
+    {
+        MoveTail();
+        MoveHead();
+        CheckTarget();
+    }
 }
 
 function MoveHead()
@@ -118,51 +151,23 @@ function MoveHead()
     switch(Direction)
     {
         case 'up':
-            if(Head.offsetTop > 0)
-            {
-                var Top = Head.offsetTop / GamePanel.offsetHeight * 100;
-                Head.style.top =  Math.round(Top - Step) + "%";
-            }
-            else
-            {
-                OnCrash();
-            }
+            var Top = Head.offsetTop / GamePanel.offsetHeight * 100;
+            Head.style.top =  Math.round(Top - Step) + "%";  
         break;
 
         case 'down':
-            if(Head.offsetTop < GamePanel.offsetHeight - Head.offsetHeight)
-            {
-                var Top = Head.offsetTop / GamePanel.offsetHeight * 100;
-                Head.style.top = Math.round(Top + Step) + "%";
-            }
-            else
-            {
-               OnCrash();
-            }
+            var Top = Head.offsetTop / GamePanel.offsetHeight * 100;
+            Head.style.top = Math.round(Top + Step) + "%";    
         break;
 
         case 'left':
-            if(Head.offsetLeft > 0)
-            {
-                var Left = Head.offsetLeft / GamePanel.offsetWidth * 100;
-                Head.style.left =  Math.round(Left - Step) + "%";
-            }
-            else
-            {
-                OnCrash();
-            }
+            var Left = Head.offsetLeft / GamePanel.offsetWidth * 100;
+            Head.style.left =  Math.round(Left - Step) + "%";   
         break;
 
         case 'right':
-            if(Head.offsetLeft < GamePanel.offsetWidth - Head.offsetWidth)
-            {
-                var Left = Head.offsetLeft / GamePanel.offsetWidth * 100;
-                Head.style.left =  Math.round(Left + Step) + "%";
-            }
-            else
-            {
-                OnCrash();
-            }
+            var Left = Head.offsetLeft / GamePanel.offsetWidth * 100;
+            Head.style.left =  Math.round(Left + Step) + "%";   
         break;
     }
 }
@@ -170,36 +175,75 @@ function MoveHead()
 function OnCrash()
 {
     clearInterval(MovementTimer);
-    Head.parentNode.removeChild(Head);
-    var Size = Tail.length;
-    for (var i = 0; i<Size; i++)
+    Head.style.backgroundColor = "Orange";
+    if(Score > Highscore)
     {
-        Tail[0].parentNode.removeChild(Tail[0]);
+        localStorage.setItem('Data', Score);
     }
+    var MainText = document.getElementById("MainText");
+    var BottomText = document.getElementById("BottomText");
+    MainText.innerHTML = "GAME OVER";
+    BottomText.innerHTML = "Press any key to restart";
+    HUDPanel.style.visibility = "visible";
  }
  
-
 function CheckTarget()
 {
     if(Head.offsetTop == Target.offsetTop && Head.offsetLeft == Target.offsetLeft)
     {
         AddTail();
         RespawnTarget();
+        Score += 1;
+        document.getElementById("ScorePanel").innerHTML = "Score: " + Score;
     }
 }
 
 function RespawnTarget()
 {
-    do
-    {
-        var TargetTop = Math.floor(Math.random() * 20) * TargetStep;
-    }while(TargetTop == Head.style.top)
-    do
-    {
-        var TargetLeft = Math.floor(Math.random() * 20) * TargetStep;
-    }while(TargetLeft == Head.style.left)
-    Target.style.top = TargetTop + "%";
-    Target.style.left = TargetLeft + "%";
+     var TargetLeft;
+     var TargetTop;
+     var Size = Tail.length;
+     var bTargetTopGood = true;
+     var bTargetLeftGood = true;
+     
+     do
+     {
+        TargetTop = Math.floor(Math.random() * 20) * TargetStep;
+         bTargetTopGood = true;
+        if(TargetTop == Head.style.top)
+        {
+            bTargetTopGood = false;
+        }
+        for(var i = 0; i<Size; i++)
+        {
+            if(TargetTop == Tail[i].style.top)
+            {
+                bTargetTopGood = false;
+                break;
+            }
+        }
+     }while(bTargetTopGood == false)
+
+     do
+     {
+        TargetLeft = Math.floor(Math.random() * 20) * TargetStep;
+         bTargetLeftGood = true;
+        if(TargetLeft == Head.style.left)
+        {
+            bTargetLeftGood = false;
+        }
+        for(var i = 0; i<Size; i++)
+        {
+            if(TargetLeft == Tail[i].style.left)
+            {
+                bTargetLeftGood = false;
+                break;
+            }
+        }
+     }while(bTargetLeftGood == false)
+
+     Target.style.top = TargetTop + "%";
+     Target.style.left = TargetLeft + "%";
 }
 
 function AddTail()
@@ -217,7 +261,7 @@ function MoveTail()
         for (var i = Size-1; i > 0 ; i--)
         {
             Tail[i].style.top = Tail[i-1].style.top;
-             Tail[i].style.left = Tail[i-1].style.left;
+            Tail[i].style.left = Tail[i-1].style.left;
         }
         Tail[0].style.top = Head.style.top;
         Tail[0].style.left = Head.style.left;  
@@ -226,5 +270,96 @@ function MoveTail()
     {
         Tail[0].style.top = Head.style.top;
         Tail[0].style.left = Head.style.left;
+    }
+}
+
+function CheckCollision()
+{
+    var GamePanel = document.getElementById("GamePanel");
+    switch(Direction)
+    {
+        case 'up':
+            if(Head.offsetTop > 0)
+            {
+                var Size = Tail.length;
+                for(var i=0; i < Size; i++)
+                {
+                    if(Head.offsetTop == Tail[i].offsetTop + Head.offsetHeight && Head.offsetLeft == Tail[i].offsetLeft)
+                    {
+                        bCrashed = true;
+                        OnCrash();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                bCrashed = true;
+                OnCrash();
+            }
+        break;
+
+        case 'down':
+            if(Head.offsetTop < GamePanel.offsetHeight - Head.offsetHeight)
+            {
+                var Size = Tail.length;
+                for(var i=0; i < Size; i++)
+                {
+                    if(Head.offsetTop == Tail[i].offsetTop - Head.offsetHeight && Head.offsetLeft == Tail[i].offsetLeft)
+                    {
+                        bCrashed = true;
+                        OnCrash();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                bCrashed = true;
+                OnCrash();
+            }
+        break;
+
+        case 'left':
+            if(Head.offsetLeft > 0)
+            {
+                var Size = Tail.length;
+                for(var i=0; i < Size; i++)
+                {
+                    if(Head.offsetLeft == Tail[i].offsetLeft + Head.offsetWidth && Head.offsetTop == Tail[i].offsetTop)
+                    {
+                        bCrashed = true;
+                        OnCrash();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                bCrashed = true;
+                OnCrash();
+            }
+        break;
+
+        case 'right':
+            if(Head.offsetLeft < GamePanel.offsetWidth - Head.offsetWidth)
+            {
+                var Size = Tail.length;
+                for(var i=0; i < Size; i++)
+                {
+                    if(Head.offsetLeft == Tail[i].offsetLeft - Head.offsetWidth && Head.offsetTop == Tail[i].offsetTop)
+                    {
+                        bCrashed = true;
+                        OnCrash();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                bCrashed = true;
+                OnCrash();
+            }
+        break;
     }
 }
