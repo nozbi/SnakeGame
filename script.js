@@ -16,6 +16,10 @@ var Score;
 var Highscore;
 var bCrashed;
 var StartGamePanel;
+var BlinkBottomTextTimer;
+var MoveSound = new Audio("Sounds/MoveSound.wav");
+var EatSound = new Audio("Sounds/EatSound.wav");
+var CrashSound = new Audio("Sounds/CrashSound.wav");
 
 
 
@@ -31,6 +35,7 @@ function OnLoad()
     document.getElementById("GamePanel").appendChild(Target);
     HUDPanel = document.getElementById("HUDPanel");
     OnResize();
+    BlinkBottomTextTimer = setInterval(BlinkBottomText, 800);
 }
 
 function OnGameStart()
@@ -52,7 +57,7 @@ function OnGameStart()
         Highscore = localStorage.getItem('Data');
     }
     document.getElementById("HighscorePanel").innerHTML = "Highscore: " + Highscore;
-    HUDPanel.style.visibility = "hidden";
+    HideHUD();
     var Size = Tail.length;
     for(var i=0; i<Size; i++)
     {
@@ -128,6 +133,7 @@ function OnKeyPressed(Event)
 
 function Move()
 {
+    MoveSound.play(); 
     if(((KeyDirection == "up" || KeyDirection == "down") && (Direction != "up" && Direction != "down")) || (KeyDirection == "left" || KeyDirection == "right") && (Direction != "left" && Direction != "right"))
     {
         Direction = KeyDirection;
@@ -174,23 +180,21 @@ function MoveHead()
 
 function OnCrash()
 {
+    CrashSound.play();
     clearInterval(MovementTimer);
     Head.style.backgroundColor = "Orange";
     if(Score > Highscore)
     {
         localStorage.setItem('Data', Score);
     }
-    var MainText = document.getElementById("MainText");
-    var BottomText = document.getElementById("BottomText");
-    MainText.innerHTML = "GAME OVER";
-    BottomText.innerHTML = "Press any key to restart";
-    HUDPanel.style.visibility = "visible";
+    ShowHUD();
  }
  
 function CheckTarget()
 {
     if(Head.offsetTop == Target.offsetTop && Head.offsetLeft == Target.offsetLeft)
     {
+        EatSound.play(); 
         AddTail();
         RespawnTarget();
         Score += 1;
@@ -362,4 +366,33 @@ function CheckCollision()
             }
         break;
     }
+}
+
+function BlinkBottomText()
+{
+    if( document.getElementById("BottomText").style.visibility == "visible")
+    {
+         document.getElementById("BottomText").style.visibility = "hidden";
+    }
+    else
+    {
+         document.getElementById("BottomText").style.visibility = "visible";
+    }
+}
+
+function ShowHUD()
+{
+    var MainText = document.getElementById("MainText");
+    var BottomText = document.getElementById("BottomText");
+    MainText.innerHTML = "GAME OVER";
+    BottomText.innerHTML = "Press any key to restart";
+    HUDPanel.style.visibility = "visible";
+    BlinkBottomTextTimer = setInterval(BlinkBottomText, 800);
+}
+
+function HideHUD()
+{
+    HUDPanel.style.visibility = "hidden";
+    clearInterval(BlinkBottomTextTimer);
+    document.getElementById("BottomText").style.visibility = "hidden";
 }

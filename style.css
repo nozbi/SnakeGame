@@ -84,9 +84,10 @@ body {
     height: 100%;
     position: absolute;
     z-index: 1;
-    background-color: transparent;
+    background-color: purple;
     color: white;
     text-align: center;
+    background-color: rgba(255,255,255,0.2);
 }
 
 #MainText {
@@ -94,8 +95,8 @@ body {
     margin-top: 40%;
 }
 
-#BottomText{
-    font-size:5vmin;
-    margin:15%;
+#BottomText {
+    font-size: 5vmin;
+    margin: 15%;
 }
 
